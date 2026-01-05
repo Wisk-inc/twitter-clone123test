@@ -1,5 +1,6 @@
 import { AnimatePresence } from 'framer-motion';
 import { where, orderBy } from 'firebase/firestore';
+import { useAuth } from '@lib/context/auth-context';
 import { useWindow } from '@lib/context/window-context';
 import { useInfiniteScroll } from '@lib/hooks/useInfiniteScroll';
 import { tweetsCollection } from '@lib/firebase/collections';
@@ -16,12 +17,13 @@ import { Error } from '@components/ui/error';
 import type { ReactElement, ReactNode } from 'react';
 
 export default function Home(): JSX.Element {
+  const { user } = useAuth();
   const { isMobile } = useWindow();
 
   const { data, loading, LoadMore } = useInfiniteScroll(
     tweetsCollection,
     [where('parent', '==', null), orderBy('createdAt', 'desc')],
-    { includeUser: true, allowNull: true, preserve: true }
+    { includeUser: true, allowNull: true, preserve: true, blockedUsers: user?.blockedUsers }
   );
 
   return (

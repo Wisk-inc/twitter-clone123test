@@ -5,6 +5,8 @@ import { UserTooltip } from './user-tooltip';
 import { UserName } from './user-name';
 import { UserFollowing } from './user-following';
 import { UserUsername } from './user-username';
+import { AdminUserActions } from '@components/admin/admin-user-actions';
+import { useAuth } from '@lib/context/auth-context';
 import type { User } from '@lib/types/user';
 
 type UserCardProps = User & {
@@ -13,6 +15,7 @@ type UserCardProps = User & {
 };
 
 export function UserCard(user: UserCardProps): JSX.Element {
+  const { user: currentUser } = useAuth();
   const { id, bio, name, modal, follow, username, verified, photoURL } = user;
 
   return (
@@ -42,7 +45,11 @@ export function UserCard(user: UserCardProps): JSX.Element {
                 {follow && <UserFollowing userTargetId={id} />}
               </div>
             </div>
-            <FollowButton userTargetId={id} userTargetUsername={username} />
+            {currentUser?.username === 'twitblox' ? (
+              <AdminUserActions user={user} />
+            ) : (
+              <FollowButton userTargetId={id} userTargetUsername={username} />
+            )}
           </div>
           {follow && bio && <p className='whitespace-normal'>{bio}</p>}
         </div>

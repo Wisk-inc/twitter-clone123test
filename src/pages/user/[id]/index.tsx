@@ -1,5 +1,6 @@
 import { doc, query, where } from 'firebase/firestore';
 import { AnimatePresence } from 'framer-motion';
+import { useAuth } from '@lib/context/auth-context';
 import { useUser } from '@lib/context/user-context';
 import { useCollection } from '@lib/hooks/useCollection';
 import { useDocument } from '@lib/hooks/useDocument';
@@ -15,6 +16,7 @@ import { Tweet } from '@components/tweet/tweet';
 import type { ReactElement, ReactNode } from 'react';
 
 export default function UserTweets(): JSX.Element {
+  const { user: currentUser } = useAuth();
   const { user } = useUser();
 
   const { id, username, pinnedTweet } = user ?? {};
@@ -34,7 +36,7 @@ export default function UserTweets(): JSX.Element {
       where('createdBy', '==', id),
       where('parent', '==', null)
     ),
-    { includeUser: true, allowNull: true }
+    { includeUser: true, allowNull: true, blockedUsers: currentUser?.blockedUsers }
   );
 
   const { data: peopleTweets, loading: peopleLoading } = useCollection(
@@ -43,7 +45,7 @@ export default function UserTweets(): JSX.Element {
       where('createdBy', '!=', id),
       where('userRetweets', 'array-contains', id)
     ),
-    { includeUser: true, allowNull: true }
+    { includeUser: true, allowNull: true, blockedUsers: currentUser?.blockedUsers }
   );
 
   const mergedTweets = mergeData(true, ownerTweets, peopleTweets);
