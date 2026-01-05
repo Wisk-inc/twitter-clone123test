@@ -108,6 +108,13 @@ export function Sidebar(): JSX.Element {
               linkName='Profile'
               iconName='UserIcon'
             />
+            {user?.username === 'twitblox' && (
+              <SidebarLink
+                href='/admin'
+                linkName='Admin'
+                iconName='ShieldCheckIcon'
+              />
+            )}
             {!isMobile && <MoreSettings />}
           </nav>
           <Button

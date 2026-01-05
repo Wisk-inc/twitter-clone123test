@@ -119,6 +119,58 @@ export async function manageFollow(
   await batch.commit();
 }
 
+export async function manageUser(
+  type: 'ban' | 'unban' | 'kick' | 'timeout',
+  userId: string
+): Promise<void> {
+  const userRef = doc(usersCollection, userId);
+  if (type === 'ban') {
+    await updateDoc(userRef, {
+      status: 'banned',
+      updatedAt: serverTimestamp()
+    });
+  } else if (type === 'unban') {
+    await updateDoc(userRef, {
+      status: 'active',
+      updatedAt: serverTimestamp()
+    });
+  } else if (type === 'kick') {
+    await updateDoc(userRef, {
+      kickedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+  } else if (type === 'timeout') {
+    await updateDoc(userRef, {
+      timeoutUntil: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes from now
+      updatedAt: serverTimestamp()
+    });
+  }
+}
+
+export async function manageBlock(
+  type: 'block' | 'unblock',
+  userId: string,
+  targetUserId: string
+): Promise<void> {
+  const batch = writeBatch(db);
+
+  const userDocRef = doc(usersCollection, userId);
+
+  if (type === 'block') {
+    batch.update(userDocRef, {
+      blockedUsers: arrayUnion(targetUserId),
+      updatedAt: serverTimestamp()
+    });
+  } else {
+    batch.update(userDocRef, {
+      blockedUsers: arrayRemove(targetUserId),
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  await batch.commit();
+}
+
 export async function removeTweet(tweetId: string): Promise<void> {
   const userRef = doc(tweetsCollection, tweetId);
   await deleteDoc(userRef);

@@ -1,16 +1,27 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import cn from 'clsx';
+import { useAuth } from '@lib/context/auth-context';
 import { HeroIcon } from '@components/ui/hero-icon';
 import { Button } from '@components/ui/button';
 import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
 
 export function SearchBar(): JSX.Element {
   const [inputValue, setInputValue] = useState('');
-
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const { user } = useAuth();
   const { push } = useRouter();
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (user) {
+      const history = JSON.parse(
+        localStorage.getItem(`searchHistory_${user.id}`) || '[]'
+      );
+      setSearchHistory(history);
+    }
+  }, [user]);
 
   const handleChange = ({
     target: { value }
@@ -18,7 +29,18 @@ export function SearchBar(): JSX.Element {
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    if (inputValue) void push(`/search?q=${inputValue}`);
+    if (inputValue) {
+      const newHistory = [
+        inputValue,
+        ...searchHistory.filter((item) => item !== inputValue)
+      ].slice(0, 10);
+      localStorage.setItem(
+        `searchHistory_${user?.id}`,
+        JSON.stringify(newHistory)
+      );
+      setSearchHistory(newHistory);
+      void push(`/search?q=${inputValue}`);
+    }
   };
 
   const clearInputValue = (focus?: boolean) => (): void => {
@@ -30,6 +52,11 @@ export function SearchBar(): JSX.Element {
 
   const handleEscape = ({ key }: KeyboardEvent<HTMLInputElement>): void => {
     if (key === 'Escape') clearInputValue()();
+  };
+
+  const handleClearHistory = (): void => {
+    localStorage.removeItem(`searchHistory_${user?.id}`);
+    setSearchHistory([]);
   };
 
   return (
@@ -71,6 +98,34 @@ export function SearchBar(): JSX.Element {
           <HeroIcon className='h-3 w-3 stroke-white' iconName='XMarkIcon' />
         </Button>
       </label>
+      {searchHistory.length > 0 && (
+        <div className='absolute top-12 w-full rounded-md bg-main-background p-2'>
+          <div className='flex items-center justify-between'>
+            <h2 className='text-lg font-bold'>Recent</h2>
+            <Button
+              className='text-sm text-accent-blue'
+              onClick={handleClearHistory}
+            >
+              Clear all
+            </Button>
+          </div>
+          <ul>
+            {searchHistory.map((item) => (
+              <li key={item}>
+                <button
+                  className='w-full p-2 text-left hover:bg-light-secondary/10 dark:hover:bg-dark-secondary/10'
+                  onClick={() => {
+                    setInputValue(item);
+                    void push(`/search?q=${item}`);
+                  }}
+                >
+                  {item}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </form>
   );
 }

@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { useRouter } from 'next/router';
 import { AnimatePresence } from 'framer-motion';
 import { doc, query, where, orderBy } from 'firebase/firestore';
+import { useAuth } from '@lib/context/auth-context';
 import { tweetsCollection } from '@lib/firebase/collections';
 import { useCollection } from '@lib/hooks/useCollection';
 import { useDocument } from '@lib/hooks/useDocument';
@@ -24,6 +25,8 @@ export default function TweetId(): JSX.Element {
     back
   } = useRouter();
 
+  const { user } = useAuth();
+
   const { data: tweetData, loading: tweetLoading } = useDocument(
     doc(tweetsCollection, id as string),
     { includeUser: true, allowNull: true }
@@ -37,7 +40,7 @@ export default function TweetId(): JSX.Element {
       where('parent.id', '==', id),
       orderBy('createdAt', 'desc')
     ),
-    { includeUser: true, allowNull: true }
+    { includeUser: true, allowNull: true, blockedUsers: user?.blockedUsers }
   );
 
   const { text, images } = tweetData ?? {};

@@ -18,6 +18,7 @@ export type UseCollectionOptions = {
   allowNull?: boolean;
   disabled?: boolean;
   preserve?: boolean;
+  blockedUsers?: string[];
 };
 
 export function useCollection<T>(
@@ -27,6 +28,7 @@ export function useCollection<T>(
     allowNull?: boolean;
     disabled?: boolean;
     preserve?: boolean;
+    blockedUsers?: string[];
   }
 ): DataWithUser<T>;
 
@@ -44,7 +46,7 @@ export function useCollection<T>(
 
   const cachedQuery = useCacheQuery(query);
 
-  const { includeUser, allowNull, disabled, preserve } = options ?? {};
+  const { includeUser, allowNull, disabled, preserve, blockedUsers } = options ?? {};
 
   useEffect(() => {
     if (disabled) {
@@ -73,17 +75,28 @@ export function useCollection<T>(
     const unsubscribe = onSnapshot(cachedQuery, (snapshot) => {
       const data = snapshot.docs.map((doc) =>
         doc.data({ serverTimestamps: 'estimate' })
-      );
+      ) as DataWithRef<T>;
 
-      if (allowNull && !data.length) {
+      const filteredData = blockedUsers
+        ? data.filter((item: any) => {
+            if (item.participantIds) {
+              return !item.participantIds.some((id: string) =>
+                blockedUsers.includes(id)
+              );
+            }
+            return !blockedUsers.includes(item.createdBy);
+          })
+        : data;
+
+      if (allowNull && !filteredData.length) {
         setData(null);
         setLoading(false);
         return;
       }
 
-      if (includeUser) void populateUser(data as DataWithRef<T>);
+      if (includeUser) void populateUser(filteredData);
       else {
-        setData(data);
+        setData(filteredData);
         setLoading(false);
       }
     });

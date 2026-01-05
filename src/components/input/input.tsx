@@ -56,7 +56,9 @@ export function Input({
   const [visited, setVisited] = useState(false);
 
   const { user, isAdmin } = useAuth();
-  const { name, username, photoURL } = user as User;
+  const { name, username, photoURL, timeoutUntil } = user as User;
+
+  const isTimedOut = timeoutUntil && timeoutUntil.toDate() > new Date();
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -236,7 +238,7 @@ export function Input({
             : replyModal
             ? 'pt-0'
             : 'border-b-2 border-light-border dark:border-dark-border',
-          (disabled || loading) && 'pointer-events-none opacity-50'
+          (disabled || loading || isTimedOut) && 'pointer-events-none opacity-50'
         )}
         htmlFor={formId}
       >
